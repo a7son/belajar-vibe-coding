@@ -1,0 +1,42 @@
+buatkan issue.md yang berisi perencanaan untuk nanti di implementasikan oleh junior programmer atau ai model yang lebih murah
+
+Isi dari planning nya adalah sebagai berikut:
+
+buat table sessions:
+- id (int, auto increment, primary key)
+- user_id int not null (ini adalah foreign key dari tabel users)
+- token varchar 255 not null (isinya UUID untuk token user yang login)
+- created_at datetime default current timestamp
+- expired_at datetime default current timestamp + 1 hour
+
+buatkan API untuk registrasi login user
+
+Endpoint : POST /api/users/login
+
+Request Body : 
+
+{
+    "email": "john_doe@localhost",
+    "password": "rahasia"
+}
+
+Response : 
+{    
+    "data": "token" -> ini adalah UUID yang di generate dari login
+}
+
+Response Error:
+{
+    "error": "Email atau password salah"
+}
+
+
+Struktur Folder di dalam src
+- routes : ini berisi routing elysia js
+- services : ini berisi logic aplikasi
+
+Struktur file
+- routes : menggunakan format misal user-route.ts
+- services : menggunakan format misal user-services.ts
+
+Jelaskan tahapan-tahapan yang harus dilakukan untuk mengimplementasikan fitur ini, anggap nanti yang mengimplementasikan adalah junior programmer atau model AI yang lebih murah.
