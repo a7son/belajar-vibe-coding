@@ -50,7 +50,7 @@ export const userRoute = new Elysia({ prefix: "/api/users" })
         }
     })
     .derive(({ headers }) => ({
-        token: headers['authorization']!.split(" ")[1]
+        token: headers['authorization']?.split(" ")[1] || ""
     }))
     .get("/current", async ({ token, set }) => {
         try {
