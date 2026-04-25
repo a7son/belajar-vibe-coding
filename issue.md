@@ -1,73 +1,64 @@
-# Implementasi API Get Current User
+# Task: Implementasi API Logout User
 
-## Deskripsi Tugas
-Buat sebuah API endpoint untuk mendapatkan data user yang saat ini sedang login berdasarkan token.
+## Deskripsi
+Fitur ini bertujuan untuk menyediakan API endpoint untuk proses logout aplikasi. Ketika user melakukan logout, sistem harus menghapus data session berdasarkan token yang dikirimkan melalui header. Dengan terhapusnya data session di database, token tersebut tidak akan valid lagi untuk digunakan pada request selanjutnya.
 
 ## Spesifikasi API
 
-- **Endpoint**: `GET /api/users/current`
-- **Headers**: 
-  - `Authorization: Bearer <token>` (token diambil dari field token pada database table `users`)
+- **Method:** `DELETE`
+- **Endpoint:** `/api/users/logout`
+- **Headers:**
+  - `Authorization: Bearer <token>`
+  *(Catatan: `<token>` adalah token autentikasi yang tersimpan di tabel `users` / `sessions`)*
 
-### Response Body (Success 200 OK)
+### Response Body (Success)
+Jika proses logout berhasil (token valid dan berhasil dihapus), kembalikan response berikut:
 ```json
 {    
-    "data": {
-        "id": 1,
-        "name": "John Doe",
-        "email": "john_doe@localhost",
-        "createdAt": "timestamp"
-    }
+    "data": "OK"
 }
 ```
 
-### Response Body (Error 401 Unauthorized)
-Jika token tidak valid, tidak disediakan, atau user tidak ditemukan:
+### Response Body (Error)
+Jika proses logout gagal (misalnya token tidak valid, header tidak dikirim, atau sesi tidak ditemukan di database), kembalikan response berikut dengan HTTP Status Code `401` (Unauthorized):
 ```json
 {
     "error": "Unauthorized"
 }
 ```
 
-## Standar Struktur Folder & Penamaan File
-Implementasi harus mengikuti standar struktur folder dan penamaan file di dalam direktori `src`:
-- **`src/routes/`**: Berisi definisi routing Elysia.js.
-  - File untuk route user harus bernama: `user-route.ts`
-- **`src/services/`**: Berisi business logic dan interaksi dengan database.
-  - File untuk service user harus bernama: `user-services.ts`
+## Struktur Folder & File yang Digunakan
+Sesuai dengan arsitektur proyek, gunakan file berikut:
+- **Routes:** `src/routes/user-route.ts` (Tempat mendefinisikan endpoint Elysia.js)
+- **Services:** `src/services/user-services.ts` (Tempat menuliskan logic utama/business logic aplikasi)
 
 ---
 
-## Tahapan Implementasi (Step-by-Step)
+## Tahapan Implementasi (Panduan Pengerjaan)
 
-Untuk mengimplementasikan fitur ini, silakan ikuti panduan langkah demi langkah berikut secara berurutan:
+Ikuti langkah-langkah berikut secara berurutan untuk mengimplementasikan fitur ini:
 
-### Tahap 1: Membuat Service untuk Mendapatkan User (`src/services/user-services.ts`)
-1. Buka atau buat file `src/services/user-services.ts`.
-2. Buat sebuah function asinkron baru bernama `getCurrentUser(token: string)`.
-3. Di dalam function tersebut, lakukan query ke database tabel `users` untuk mencari data user di mana field `token` sama dengan parameter `token` yang dikirimkan.
-4. **Penanganan Error:** Jika hasil query kosong (user tidak ditemukan dengan token tersebut), lemparkan sebuah error (throw error) yang menandakan akses ditolak (misalnya `Error("Unauthorized")` atau custom error class jika ada).
-5. **Return Data:** Jika user ditemukan, return/kembalikan sebuah objek yang **hanya** berisi field: `id`, `name`, `email`, dan `createdAt`. Pastikan field sensitif seperti `password` atau `token` itu sendiri **TIDAK** ikut dikembalikan.
+### 1. Buat Logic Logout di `user-services.ts`
+Fokus pada file ini adalah untuk melakukan pengecekan dan eksekusi ke database.
+- Buka file `src/services/user-services.ts`.
+- Buat sebuah fungsi baru bernama `logout` (atau nama serupa). Fungsi ini harus menerima parameter `token` (bertipe `string`).
+- **Validasi ke Database:** Lakukan query ke database (misalnya menggunakan Prisma/Drizzle) untuk mencari data session/user yang memiliki token tersebut.
+- **Penanganan Error:** Jika token tidak ditemukan di database, fungsi harus melemparkan error (throw error) yang menandakan akses tidak valid (Unauthorized).
+- **Hapus Data Session:** Jika token valid dan ditemukan, lakukan perintah penghapusan (DELETE) pada tabel `sessions` dengan kondisi (where) berdasarkan `token` tersebut.
+- Fungsi cukup berjalan sukses jika berhasil menghapus, atau bisa mengembalikan nilai `"OK"`.
 
-### Tahap 2: Menambahkan Route Endpoint (`src/routes/user-route.ts`)
-1. Buka atau buat file `src/routes/user-route.ts`.
-2. Tambahkan route baru menggunakan method GET ke path `/api/users/current` pada instance Elysia.
-3. Di dalam handler route tersebut, tangkap request header `Authorization`.
-4. Lakukan pengecekan header `Authorization`:
-   - Jika header tidak ada, segera return response HTTP Status 401 dengan body `{"error": "Unauthorized"}`.
-   - Jika ada, pisahkan string-nya (biasanya berformat `Bearer <token-asli>`). Ambil bagian `<token-asli>` saja.
-5. Panggil function `getCurrentUser(tokenAsli)` yang sudah dibuat di `user-services.ts`.
-6. Bungkus hasil kembalian dari service ke dalam format JSON yang diharapkan:
-   ```json
-   {
-       "data": { ...hasil_dari_service... }
-   }
-   ```
-7. Pastikan route file ini sudah di-import dan di-register ke instance utama aplikasi (biasanya di `src/index.ts`).
-8. Jika terjadi error (ditangkap via try-catch atau error handler bawaan Elysia), pastikan response yang dikembalikan adalah HTTP Status 401 dengan JSON `{"error": "Unauthorized"}`.
+### 2. Buat Routing Endpoint di `user-route.ts`
+Fokus pada file ini adalah untuk menangani request HTTP dan menghubungkannya dengan service.
+- Buka file `src/routes/user-route.ts`.
+- Tambahkan sebuah rute baru menggunakan method `.delete()` untuk endpoint `/api/users/logout`.
+- **Ambil Token dari Header:** Buat logika untuk membaca header `Authorization`. Anda perlu memisahkan kata `Bearer ` untuk mendapatkan nilai token aslinya.
+- **Validasi Format Header:** Jika header tidak ada, atau formatnya bukan `Bearer <token>`, langsung kembalikan error `401` dengan response `{"error": "Unauthorized"}` tanpa perlu memanggil database.
+- **Panggil Service:** Jika token didapatkan dari header, panggil fungsi `logout` yang sudah kamu buat di `user-services.ts` dengan menyematkan token tersebut.
+- **Bentuk Response:** 
+  - Jika fungsi service berhasil, kirimkan kembalian sukses: `{"data": "OK"}`.
+  - Tangkap potensi error dari service (seperti error tidak ditemukan). Jika error tersebut terjadi, kembalikan response JSON `{"error": "Unauthorized"}` dengan status HTTP `401`.
 
-### Tahap 3: Pengujian (Testing)
-Setelah kode selesai ditulis, pastikan untuk melakukan tes secara lokal:
-1. **Skenario Gagal (No Token):** Akses `GET /api/users/current` tanpa menyertakan header `Authorization`. Pastikan response adalah `401 Unauthorized`.
-2. **Skenario Gagal (Invalid Token):** Akses dengan `Authorization: Bearer token-asal-asalan-123`. Pastikan response adalah `401 Unauthorized`.
-3. **Skenario Sukses:** Akses dengan token yang valid (bisa dilihat langsung di database tabel `users`). Pastikan mendapatkan HTTP status 200 OK dan struktur JSON memuat objek `data` dengan data diri user yang sesuai.
+### 3. Lakukan Pengujian Singkat
+Setelah kode ditulis, pastikan dua skenario ini berjalan:
+1. **Skenario Sukses:** Kirim request dengan token yang benar. Pastikan response-nya adalah `"data": "OK"`, dan cek tabel `sessions` di database bahwa baris session dengan token tersebut telah hilang.
+2. **Skenario Gagal:** Kirim request tanpa header `Authorization` atau gunakan token asal-asalan. Pastikan aplikasi tidak crash dan merespon dengan `"error": "Unauthorized"`.
